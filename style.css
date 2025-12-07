@@ -1,0 +1,106 @@
+/* Sad theme: Dark, muted colors with a melancholic feel */
+body {
+    font-family: 'Arial', sans-serif;
+    background: linear-gradient(to bottom, #2c3e50, #34495e); /* Dark blue-gray gradient */
+    color: #bdc3c7; /* Light gray text */
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    overflow: hidden;
+}
+
+/* Rainy effect overlay for sadness */
+body::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="1" fill="%23bdc3c7" opacity="0.3"/></svg>') repeat;
+    animation: rain 10s linear infinite;
+    pointer-events: none;
+}
+
+@keyframes rain {
+    0% { transform: translateY(-100vh); }
+    100% { transform: translateY(100vh); }
+}
+
+.container {
+    background: rgba(44, 62, 80, 0.9); /* Semi-transparent dark background */
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+    text-align: center;
+    max-width: 500px;
+    width: 90%;
+    position: relative;
+    z-index: 1;
+}
+
+h1 {
+    color: #ecf0f1; /* Light text for title */
+    font-size: 2em;
+    margin-bottom: 10px;
+}
+
+p {
+    color: #95a5a6; /* Muted gray */
+    font-size: 1.1em;
+}
+
+#quiz {
+    margin-top: 20px;
+}
+
+#question-container {
+    margin-bottom: 20px;
+}
+
+#question-text {
+    font-size: 1.5em;
+    color: #ecf0f1;
+    margin-bottom: 15px;
+}
+
+#answer-input {
+    width: 100%;
+    height: 100px;
+    padding: 10px;
+    border: 1px solid #7f8c8d;
+    border-radius: 5px;
+    background: #34495e; /* Dark gray background */
+    color: #ecf0f1; /* Light text */
+    font-size: 1em;
+    resize: vertical;
+    box-sizing: border-box;
+}
+
+#answer-input::placeholder {
+    color: #95a5a6; /* Muted placeholder */
+}
+
+.btn {
+    background: #7f8c8d; /* Muted gray button */
+    color: #ecf0f1;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1em;
+    margin: 10px;
+    transition: background 0.3s;
+}
+
+.btn:hover {
+    background: #95a5a6; /* Lighter on hover */
+}
+
+#result {
+    color: #bdc3c7;
+    font-size: 1.2em;
+}

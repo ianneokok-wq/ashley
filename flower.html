@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Centered Automatic Flower Bloom with Realistic Grass and Effects</title>
+<link href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap" rel="stylesheet">
+<style>
+body {
+  margin:0;
+  height:100vh;
+  display:flex;
+  justify-content:center;
+  align-items:flex-end;
+  background: linear-gradient(to top, #a3d977 0%, #87ceeb 100%);
+  overflow: hidden;
+  position: relative;
+  font-family: 'Pacifico', cursive;
+}
+.flower { position: relative; width:400px; height:400px; z-index:2; }
+.petal {
+  position:absolute;
+  width:60px;
+  height:150px;
+  background: radial-gradient(circle at top, #ff9aa2, #ff6b6b);
+  border-radius: 50% 50% 40% 40%;
+  transform-origin: bottom center;
+  top:50%; left:50%;
+  margin:-150px 0 0 -30px;
+  opacity:0;
+}
+.center {
+  position:absolute;
+  width:70px;
+  height:70px;
+  background: radial-gradient(circle at center, #fff176, #fbc02d);
+  border-radius:50%;
+  top:50%; left:50%;
+  margin:-35px 0 0 -35px;
+  opacity:0;
+  z-index:3;
+}
+.stem {
+  position:absolute;
+  width:20px;
+  height:300px;
+  background: linear-gradient(to top, #2e7d32, #4caf50);
+  top:50%; left:50%;
+  margin:0 0 0 -10px;
+  border-radius:10px;
+  z-index:0;
+}
+.grass-blade {
+  position: absolute;
+  bottom: 0;
+  width: 6px;
+  height: 40px;
+  background: linear-gradient(to top, #1b5e20, #4caf50);
+  border-radius: 50% 50% 0 0;
+  transform-origin: bottom center;
+  clip-path: polygon(50% 0%, 60% 30%, 70% 100%, 30% 100%, 40% 30%);
+  animation: sway 2s infinite alternate ease-in-out;
+  opacity:0.8;
+}
+@keyframes sway {
+  from { transform: rotate(-10deg); }
+  to { transform: rotate(10deg); }
+}
+.text-overlay {
+  position: absolute;
+  top: 20px;
+  width: 100%;
+  text-align: center;
+  font-size: 48px;
+  color: #fff;
+  text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+  z-index: 10;
+}
+.star {
+  position: absolute;
+  width: 2px;
+  height: 2px;
+  background: white;
+  border-radius: 50%;
+  opacity: 0.8;
+  animation: twinkle 2s infinite alternate;
+}
+@keyframes twinkle {
+  0% { opacity: 0.3; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.5); }
+  100% { opacity: 0.3; transform: scale(1); }
+}
+.shooting-star {
+  position: absolute;
+  width: 3px;
+  height: 100px;
+  background: linear-gradient(45deg, white, transparent);
+  opacity: 0;
+  transform: rotate(45deg);
+  animation: shoot 2s linear infinite;
+}
+@keyframes shoot {
+  0% { opacity: 1; transform: translateX(0) translateY(0) rotate(45deg); }
+  100% { opacity: 0; transform: translateX(-500px) translateY(500px) rotate(45deg); }
+}
+</style>
+</head>
+<body>
+<div class="text-overlay">Flowers for You</div>
+<div class="flower">
+  <div class="stem"></div>
+  <div class="petal"></div>
+  <div class="petal"></div>
+  <div class="petal"></div>
+  <div class="petal"></div>
+  <div class="petal"></div>
+  <div class="petal"></div>
+  <div class="petal"></div>
+  <div class="petal"></div>
+  <div class="center"></div>
+</div>
+<script>
+// Flower animation
+const petals = document.querySelectorAll('.petal');
+const center = document.querySelector('.center');
+const radius = 0;
+petals.forEach((petal, index) => {
+  const angle = index * 45;
+  const rad = angle * Math.PI / 180;
+  const x = radius * Math.sin(rad);
+  const y = -radius * Math.cos(rad);
+  
+  petal.animate([
+    { transform: 'translate(0,0) scale(0)', opacity: 0 },
+    { transform: `translate(${x}px, ${y}px) rotate(${angle}deg) scale(1)`, opacity: 1 }
+  ], {
+    duration: 1000,
+    delay: index * 150,
+    fill: 'forwards',
+    easing: 'ease-out'
+  });
+});
+center.animate([
+  { transform: 'scale(0)', opacity: 0 },
+  { transform: 'scale(1)', opacity: 1 }
+], {
+  duration: 800,
+  delay: petals.length * 150 + 200,
+  fill: 'forwards',
+  easing: 'ease-out'
+});
+
+// Realistic Grass blades
+for (let i = 0; i < 100; i++) {
+  const blade = document.createElement('div');
+  blade.className = 'grass-blade';
+  blade.style.left = Math.random() * window.innerWidth + 'px';
+  blade.style.height = 30 + Math.random() * 50 + 'px';
+  blade.style.animationDuration = 1 + Math.random() * 2 + 's';
+  blade.style.opacity = 0.5 + Math.random() * 0.5;
+  document.body.appendChild(blade);
+}
+
+// Background stars
+for (let i = 0; i < 150; i++) {
+  const star = document.createElement('div');
+  star.className = 'star';
+  star.style.left = Math.random() * window.innerWidth + 'px';
+  star.style.top = Math.random() * window.innerHeight * 0.5 + 'px';
+  star.style.width = star.style.height = Math.random() * 2 + 1 + 'px';
+  star.style.animationDuration = 1 + Math.random() * 2 + 's';
+  document.body.appendChild(star);
+}
+
+// Shooting stars
+for (let i = 0; i < 3; i++) {
+  const shooting = document.createElement('div');
+  shooting.className = 'shooting-star';
+  shooting.style.top = Math.random() * 200 + 'px';
+  shooting.style.left = Math.random() * window.innerWidth + 'px';
+  shooting.style.animationDelay = Math.random() * 5 + 's';
+  document.body.appendChild(shooting);
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,321 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>For You — ♡</title>
+<style>
+/*
+* Prefixed by https://autoprefixer.github.io
+* PostCSS: v8.4.14,
+* Autoprefixer: v10.4.7
+* Browsers: last 4 version
+*/
+
+:root {
+  --bg:#0f1022;
+  --accent:#ff6b9a;
+  --accent-2:#ffd166;
+  --glass:rgba(255,255,255,0.06);
+}
+*{-webkit-box-sizing:border-box;box-sizing:border-box;}
+html,body{
+  height:100%;margin:0;font-family:'Inter',sans-serif;
+}
+body{
+  background: -o-radial-gradient(10% 20%, 1200px 600px, rgba(241, 0, 76, 0.5), transparent),
+              -o-radial-gradient(90% 80%, 1000px 500px, rgba(255,209,102,0.03), transparent),
+              var(--bg);
+  background: radial-gradient(1200px 600px at 10% 20%, rgba(241, 0, 76, 0.5), transparent),
+              radial-gradient(1000px 500px at 90% 80%, rgba(255,209,102,0.03), transparent),
+              var(--bg);
+  color:#eee;display:-webkit-box;display:-ms-flexbox;display:flex;-webkit-box-align:center;-ms-flex-align:center;align-items:center;-webkit-box-pack:center;-ms-flex-pack:center;justify-content:center;padding:32px;
+  overflow:hidden;
+}
+
+.card{
+  width:100%;max-width:960px;
+  background: -webkit-gradient(linear, left top, left bottom, from(rgba(138, 4, 131, 0.5)), to(rgba(255,255,255,0.01)));
+  background: -o-linear-gradient(top, rgba(138, 4, 131, 0.5), rgba(255,255,255,0.01));
+  background: linear-gradient(180deg, rgba(138, 4, 131, 0.5), rgba(255,255,255,0.01));
+  border-radius:18px;padding:28px;-webkit-box-shadow:0 10px 40px rgba(2,6,23,0.6);box-shadow:0 10px 40px rgba(2,6,23,0.6);
+  position:relative;overflow:hidden;border:1px solid rgba(255,255,255,0.03)
+}
+.split{display:-ms-grid;display:grid;-ms-grid-columns:1fr 22px 420px;grid-template-columns:1fr 420px;gap:22px;-webkit-box-align:center;-ms-flex-align:center;align-items:center}
+@media (max-width:880px){.split{-ms-grid-columns:1fr;grid-template-columns:1fr}.side{-webkit-box-ordinal-group:0;-ms-flex-order:-1;order:-1}}
+h1{font-size:2.1rem;margin:0 0 8px 0;letter-spacing:0.4px}
+.subtitle{color:rgba(255, 0, 179, 1);margin-bottom:18px}
+.photo{background:-o-linear-gradient(315deg,rgba(202,0,185,0.03),rgba(255,255,255,0.01));background:linear-gradient(135deg,rgba(202,0,185,0.03),rgba(255,255,255,0.01));border-radius:14px;
+       padding:12px;display:-webkit-box;display:-ms-flexbox;display:flex;-webkit-box-align:center;-ms-flex-align:center;align-items:center;-webkit-box-pack:center;-ms-flex-pack:center;justify-content:center;-webkit-box-orient:vertical;-webkit-box-direction:normal;-ms-flex-direction:column;flex-direction:column;gap:12px}
+.photo img{width:100%;max-width:320px;border-radius:10px;-webkit-box-shadow:0 8px 30px rgba(2,6,23,0.6);box-shadow:0 8px 30px rgba(2,6,23,0.6);-webkit-transition:opacity 1s ease-in-out;-o-transition:opacity 1s ease-in-out;transition:opacity 1s ease-in-out}
+.caption{text-align:center}
+.message{margin-top:18px;padding:16px;background:var(--glass);border-radius:12px;color:#fff;line-height:1.5;font-size:1rem}
+.controls{display:-webkit-box;display:-ms-flexbox;display:flex;gap:12px;margin-top:8px}
+button{
+  background:-webkit-gradient(linear,left top, right top,from(var(--accent)),to(var(--accent-2)));
+  background:-o-linear-gradient(left,var(--accent),var(--accent-2));
+  background:linear-gradient(90deg,var(--accent),var(--accent-2));
+  border:none;color:#111;padding:10px 14px;border-radius:12px;
+  font-weight:700;cursor:pointer;-webkit-box-shadow:0 6px 18px rgba(255,107,154,0.12);box-shadow:0 6px 18px rgba(255,107,154,0.12);
+  -webkit-transition:-webkit-transform .2s;
+  transition:-webkit-transform .2s;
+  -o-transition:transform .2s;
+  transition:transform .2s;
+  transition:transform .2s, -webkit-transform .2s;
+}
+button:hover{-webkit-transform:scale(1.1);-ms-transform:scale(1.1);transform:scale(1.1)}
+footer{margin-top:14px;color:rgba(255,255,255,0.45);font-size:0.86rem}
+
+.cute{
+  background:-webkit-gradient(linear,left top, right top,from(var(--accent)),to(var(--accent-2)));
+  background:-o-linear-gradient(left,var(--accent),var(--accent-2));
+  background:linear-gradient(90deg,var(--accent),var(--accent-2));
+  border:none;color:#111;padding:10px 14px;border-radius:12px;
+  font-weight:700;cursor:pointer;-webkit-box-shadow:0 6px 18px rgba(255,107,154,0.12);box-shadow:0 6px 18px rgba(255,107,154,0.12);
+  -webkit-transition:-webkit-transform .2s;
+  transition:-webkit-transform .2s;
+  -o-transition:transform .2s;
+  transition:transform .2s;
+  transition:transform .2s, -webkit-transform .2s;
+}
+.cute:hover{-webkit-transform:scale(1.1);-ms-transform:scale(1.1);transform:scale(1.1)}
+footer{margin-top:14px;color:rgba(255,255,255,0.45);font-size:0.86rem}
+
+/* ===== ENVELOPE ===== */
+.envelope-container {
+  position: fixed;
+  top: 50%; left: 50%;
+  -webkit-transform: translate(-50%, -50%) scale(0);
+      -ms-transform: translate(-50%, -50%) scale(0);
+          transform: translate(-50%, -50%) scale(0);
+  width: 320px; height: 220px;
+  -webkit-perspective: 1000px;
+          perspective: 1000px;
+  -webkit-transition: -webkit-transform 0.6s ease;
+  transition: -webkit-transform 0.6s ease;
+  -o-transition: transform 0.6s ease;
+  transition: transform 0.6s ease;
+  transition: transform 0.6s ease, -webkit-transform 0.6s ease;
+  z-index: 999;
+}
+.envelope-container.show {
+  -webkit-transform: translate(-50%, -50%) scale(1);
+      -ms-transform: translate(-50%, -50%) scale(1);
+          transform: translate(-50%, -50%) scale(1);
+}
+
+.envelope {
+  width: 100%; height: 100%;
+  position: relative;
+  -webkit-transform-style: preserve-3d;
+          transform-style: preserve-3d;
+}
+
+.envelope-body {
+  position: absolute;
+  bottom: 0;
+  width: 100%; height: 100%;
+  background: -webkit-gradient(linear,left top, right bottom,from(#ff6b9a),to(#ff2a75));
+  background: -o-linear-gradient(top left,#ff6b9a,#ff2a75);
+  background: linear-gradient(to bottom right,#ff6b9a,#ff2a75);
+  border-radius: 8px;
+  -webkit-box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+          box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+  overflow: hidden;
+  z-index: 1;
+}
+
+.envelope-flap {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%; height: 50%;
+  background: -webkit-gradient(linear,left top, right bottom,from(#ff94b5),to(#ff6b9a));
+  background: -o-linear-gradient(top left,#ff94b5,#ff6b9a);
+  background: linear-gradient(to bottom right,#ff94b5,#ff6b9a);
+  -webkit-clip-path: polygon(0 0, 100% 0, 50% 100%);
+          clip-path: polygon(0 0, 100% 0, 50% 100%);
+  -webkit-transform-origin: top;
+      -ms-transform-origin: top;
+          transform-origin: top;
+  z-index: 3;
+  -webkit-transition: -webkit-transform 1s ease-in-out;
+  transition: -webkit-transform 1s ease-in-out;
+  -o-transition: transform 1s ease-in-out;
+  transition: transform 1s ease-in-out;
+  transition: transform 1s ease-in-out, -webkit-transform 1s ease-in-out;
+  -webkit-backface-visibility: hidden;
+          backface-visibility: hidden;
+}
+
+.envelope.open .envelope-flap {
+  -webkit-transform: rotateX(-180deg);
+          transform: rotateX(-180deg);
+}
+
+/* ===== CENTERED LETTER ===== */
+.letter {
+  position: fixed;
+  top: 50%; left: 50%;
+  -webkit-transform: translate(-50%, -50%) scale(0.5);
+      -ms-transform: translate(-50%, -50%) scale(0.5);
+          transform: translate(-50%, -50%) scale(0.5);
+  width: 280px;
+  background: #fff;
+  color: #000;
+  border-radius: 10px;
+  padding: 20px;
+  font-size: 0.95rem;
+  -webkit-box-shadow: 0 0 20px rgba(255, 107, 154, 0.6);
+          box-shadow: 0 0 20px rgba(255, 107, 154, 0.6);
+  text-align: center;
+  line-height: 1.6;
+  opacity: 0;
+  z-index: 1000;
+  -webkit-transition: all 0.8s ease;
+  -o-transition: all 0.8s ease;
+  transition: all 0.8s ease;
+}
+.letter.show {
+  opacity: 1;
+  -webkit-transform: translate(-50%, -50%) scale(1);
+      -ms-transform: translate(-50%, -50%) scale(1);
+          transform: translate(-50%, -50%) scale(1);
+}
+
+/* Floating hearts */
+.heart {
+  position: fixed;
+  bottom: 0;
+  width: 16px; height: 16px;
+  background: pink;
+  -webkit-transform: rotate(45deg);
+      -ms-transform: rotate(45deg);
+          transform: rotate(45deg);
+  -webkit-animation: floatUp 4s ease-in infinite;
+          animation: floatUp 4s ease-in infinite;
+  z-index: 0;
+}
+.heart::before, .heart::after {
+  content: '';
+  position: absolute;
+  width: 16px; height: 16px;
+  background: pink;
+  border-radius: 50%;
+}
+.heart::before { top: -8px; left: 0; }
+.heart::after { left: -8px; top: 0; }
+
+@-webkit-keyframes floatUp {
+  0% {-webkit-transform:translateY(0) rotate(45deg);transform:translateY(0) rotate(45deg); opacity:1;}
+  100% {-webkit-transform:translateY(-400px) rotate(45deg);transform:translateY(-400px) rotate(45deg); opacity:0;}
+}
+
+@keyframes floatUp {
+  0% {-webkit-transform:translateY(0) rotate(45deg);transform:translateY(0) rotate(45deg); opacity:1;}
+  100% {-webkit-transform:translateY(-400px) rotate(45deg);transform:translateY(-400px) rotate(45deg); opacity:0;}
+}.example {
+    display: -ms-grid;
+    display: grid;
+    -webkit-transition: all .5s;
+    -o-transition: all .5s;
+    transition: all .5s;
+    -webkit-user-select: none;
+       -moz-user-select: none;
+        -ms-user-select: none;
+            user-select: none;
+    background: -webkit-gradient(linear, left top, left bottom, from(white), to(black));
+    background: -o-linear-gradient(top, white, black);
+    background: linear-gradient(to bottom, white, black);
+}
+</style>
+</head>
+<body>
+<audio id="mySong" src="okay.mp3" autoplay></audio>
+<div class="card">
+  <div class="split">
+    <div class="greeting">
+      <h1>Hello, my dear greatest love!! — <span style="color:var(--accent)">I miss you a lot!!</span></h1>
+      <div class="subtitle">A little message for you okay?✨</div>
+      <div class="message" id="longmsg">
+        I made this because I wanted you to realize that I'm always here even though I'm the one who left.
+        I didn't mean to leave, it's just you're not happy with me anymore, so I decided to make you happy without me.
+        This is the last surprise I will make for you okay? I always love you Ashley, my baby. ❤️
+      </div>
+      <div class="controls">
+        <button id="surpriseBtn">Another message</button>
+        <button onclick="playSong()">Play Song</button>
+        <button>My Question</button>
+        <button id="loveBtn">Love</button>
+      </div>
+      <footer>I failed as your man.</footer>
+    </div>
+    <aside class="side photo">
+      <img id="mainPhoto" src="ashley.jpg" alt="Couple photo">
+      <div class="caption">Look, you're so beautiful ✨</div>
+    </aside>
+  </div>
+</div>
+
+<!-- Envelope -->
+<div class="envelope-container" id="envContainer">
+  <div class="envelope" id="envelope">
+    <div class="envelope-body"></div>
+    <div class="envelope-flap"></div>
+  </div>
+</div>
+
+<!-- Floating letter -->
+<div class="letter" id="letterText"></div>
+
+<script>
+const photos=["baby2.jpg","baby3.jpg","baby4.jpg","baby5.jpg",];
+let index=0;
+const mainPhoto=document.getElementById('mainPhoto');
+setInterval(()=>{
+  index=(index+1)%photos.length;
+  mainPhoto.style.opacity=0;
+  setTimeout(()=>{mainPhoto.src=photos[index];mainPhoto.style.opacity=1;},1000);
+},4000);
+
+const envContainer=document.getElementById('envContainer');
+const envelope=document.getElementById('envelope');
+const letter=document.getElementById('letterText');
+
+document.getElementById('surpriseBtn').addEventListener('click',()=>{
+  letter.textContent="HI!! I miss you a lot, are you okay now? I'm always here okay? I'm sorry for what i did, sorry for leaving you but i...realize that i'm so bad treating you but i saw your smile from afar..... but it's not coming from me, galing to sa mga kaibigan mo..na pinag babawal ko na lumapit ka, doon ko na realize that i'm so fucking useless at all kaya kita pinalaya okay? hindi dahil may bagoor ayaw ko na sayo, i'm always love you, and now it's my day can you make my last wish? please be happy cuz it's what you deservenot me....i will live at my regrets, i wish the best for you okay? advance happy birthday!! see you in another universe!!";
+
+  envContainer.classList.add('show');
+  setTimeout(()=> envelope.classList.add('open'), 1000);
+  setTimeout(()=>{
+    letter.classList.add('show');
+    spawnHearts();
+  }, 1300);
+
+  // Hide everything after 7 seconds
+  setTimeout(()=>{
+    letter.classList.remove('show');
+    envelope.classList.remove('open');
+    envContainer.classList.remove('show');
+  }, 10000);
+});
+
+function playSong(){document.getElementById("mySong").play();}
+document.getElementById('loveBtn').addEventListener('click',()=>{window.location.href='meme.html';})
+document.querySelector('button:nth-child(3)').addEventListener('click', function() {
+    window.open('https://forms.gle/NK3LMCBYFLVt6vfv5', '_blank');
+});
+
+function spawnHearts(){
+  for(let i=0;i<15;i++){
+    const heart=document.createElement('div');
+    heart.className='heart';
+    heart.style.left=Math.random()*window.innerWidth+'px';
+    heart.style.animationDuration=(3+Math.random()*2)+'s';
+    document.body.appendChild(heart);
+    setTimeout(()=>heart.remove(),4000);
+  }
+}
+</script>
+</body>
+</html>

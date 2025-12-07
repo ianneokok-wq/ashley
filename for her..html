@@ -1,0 +1,894 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Glowing Blob Animation</title>
+  <style>
+    /* Full-viewport reset */
+    html,body { height:100%; margin:0; background:#000; overflow:hidden; }
+    canvas { display:block; width:100%; height:100%; }
+
+    /* Optional UI overlay for tuning (hidden by default) */
+    .ui {
+      position:fixed; right:12px; top:12px;
+      background: rgba(255,255,255,0.06);
+      color: #fff; padding:10px; border-radius:8px;
+      font-family: Inter, system-ui, Arial; font-size:13px;
+      backdrop-filter: blur(6px);
+    }
+    .ui label { display:block; margin-bottom:6px; opacity:0.9; }
+    .ui input[type=range] { width:160px; }
+  </style>
+</head>
+<body>
+  <canvas id="c"></canvas>
+
+  <!-- Optional small UI for tweaking live values -->
+  <div class="ui" id="ui" aria-hidden="true" style="display:none;">
+    <label>Blob size <input id="size" type="range" min="40" max="400" value="160"></label>
+    <label>Glow <input id="glow" type="range" min="0" max="60" value="24"></label>
+    <label>Speed <input id="speed" type="range" min="0.2" max="3" step="0.1" value="1"></label>
+  </div>
+
+  <script>
+  /**
+   * Glowing blob + particle trail canvas animation
+   * - Responsive to devicePixelRatio
+   * - Uses layered drawing for glow + main shape + particles
+   * - Smooth path via cubic easing / sin/cos motion
+   *
+   * Drop-in file — tweak parameters below or unhide the .ui for live control.
+   */
+
+  (function(){
+    const canvas = document.getElementById('c');
+    const ctx = canvas.getContext('2d', { alpha: true });
+
+    // Parameters (adjust to match your video)
+    let params = {
+      bgGradientTop: '#0b1220',
+      bgGradientBottom: '#08202a',
+      accent1: '#22d3ee',   // bright cyan
+      accent2: '#8b5cf6',   // soft purple
+      blobSize: 160,
+      glow: 24,
+      speed: 1.0,
+      particleCount: 80,
+      particleFade: 0.015
+    };
+
+    // Hook UI if present
+    const ui = document.getElementById('ui');
+    if(ui){
+      document.getElementById('size').value = params.blobSize;
+      document.getElementById('glow').value = params.glow;
+      document.getElementById('speed').value = params.speed;
+      // toggle UI with "u" key
+      window.addEventListener('keydown', e=>{
+        if(e.key === 'u') ui.style.display = (ui.style.display === 'none')? 'block' : 'none';
+      });
+      document.getElementById('size').oninput = (e)=> params.blobSize = +e.target.value;
+      document.getElementById('glow').oninput = (e)=> params.glow = +e.target.value;
+      document.getElementById('speed').oninput = (e)=> params.speed = +e.target.value;
+    }
+
+    // DPR/resizing
+    function fitCanvas(){
+      const DPR = Math.max(1, window.devicePixelRatio || 1);
+      canvas.width  = Math.round(innerWidth * DPR);
+      canvas.height = Math.round(innerHeight * DPR);
+      canvas.style.width  = innerWidth + 'px';
+      canvas.style.height = innerHeight + 'px';
+      ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    }
+    addEventListener('resize', fitCanvas);
+    fitCanvas();
+
+    // Simple particle system
+    class Particle {
+      constructor(x,y, vx, vy, life, color){
+        this.x=x; this.y=y; this.vx=vx; this.vy=vy;
+        this.life=life; this.maxLife=life; this.color=color;
+        this.size = Math.random()*3 + 1;
+      }
+      step(dt){
+        this.x += this.vx * dt;
+        this.y += this.vy * dt;
+        this.vx *= 0.995; this.vy *= 0.995; // slight drag
+        this.life -= dt;
+      }
+      draw(g){
+        const t = Math.max(0, this.life/this.maxLife);
+        g.globalAlpha = Math.pow(t, 1.1);
+        g.beginPath();
+        g.arc(this.x, this.y, this.size, 0, Math.PI*2);
+        g.fillStyle = this.color;
+        g.fill();
+      }
+    }
+
+    const particles = [];
+
+    // animation state
+    let tStart = performance.now()/1000;
+    let lastTime = tStart;
+
+    function spawnParticles(x,y, count=2){
+      for(let i=0;i<count;i++){
+        const a = Math.random()*Math.PI*2;
+        const s = 10 + Math.random()*80;
+        const vx = Math.cos(a)*s*0.02;
+        const vy = Math.sin(a)*s*0.02;
+        const life = 0.6 + Math.random()*1.2;
+        const c = (Math.random() < 0.5) ? params.accent1 : params.accent2;
+        particles.push(new Particle(x, y, vx, vy, life, c));
+      }
+      // limit count
+      while(particles.length > params.particleCount) particles.shift();
+    }
+
+    // Utility: smoothstep easing
+    function easeInOutCubic(x){
+      return x<0.5 ? 4*x*x*x : 1 - Math.pow(-2*x+2,3)/2;
+    }
+
+    // Blob shape drawing: uses radial gradient + composite for glow
+    function drawBlob(g, x, y, radius, angle){
+      // glow layer
+      g.save();
+      g.globalCompositeOperation = 'lighter';
+      g.beginPath();
+      g.filter = `blur(${params.glow}px)`;
+      const grad = g.createRadialGradient(x, y, radius*0.2, x, y, radius*1.6);
+      grad.addColorStop(0, params.accent1);
+      grad.addColorStop(0.5, params.accent2);
+      grad.addColorStop(1, 'rgba(0,0,0,0)');
+      g.fillStyle = grad;
+      g.arc(x, y, radius*1.6, 0, Math.PI*2);
+      g.fill();
+      g.filter = 'none';
+      g.restore();
+
+      // main blob — slightly squashed ellipse to mimic organic motion
+      g.save();
+      g.translate(x, y);
+      const wobble = Math.sin(angle*2.3) * 0.12;
+      g.rotate(wobble);
+      g.beginPath();
+      g.ellipse(0, 0, radius*1.05, radius*0.9, 0, 0, Math.PI*2);
+      // inner gradient for depth
+      const inner = g.createLinearGradient(-radius, -radius, radius, radius);
+      inner.addColorStop(0, params.accent1);
+      inner.addColorStop(1, params.accent2);
+      g.fillStyle = inner;
+      g.fill();
+      // subtle highlight
+      g.globalAlpha = 0.18;
+      g.fillStyle = '#ffffff';
+      g.beginPath();
+      g.ellipse(-radius*0.25, -radius*0.35, radius*0.45, radius*0.25, 0, 0, Math.PI*2);
+      g.fill();
+      g.globalAlpha = 1;
+      g.restore();
+    }
+
+    // Main render loop
+    function step(now){
+      now = now/1000;
+      let dt = Math.min(0.04, now - lastTime);
+      lastTime = now;
+      const elapsed = now - tStart;
+
+      // background gradient
+      const w = innerWidth, h = innerHeight;
+      const bg = ctx.createLinearGradient(0,0, w, h);
+      bg.addColorStop(0, params.bgGradientTop);
+      bg.addColorStop(1, params.bgGradientBottom);
+      ctx.fillStyle = bg;
+      ctx.fillRect(0,0,w,h);
+
+      // compute blob center along a looping, smooth path
+      const loop = 6.0; // seconds per loop
+      const p = (elapsed * params.speed / loop) % 1; // 0..1
+      // combine circular + Lissajous for natural path
+      const px = 0.5 + 0.3 * Math.cos(p * Math.PI * 2) + 0.06 * Math.cos(p * Math.PI * 4 + 1.2);
+      const py = 0.5 + 0.2 * Math.sin(p * Math.PI * 2) + 0.06 * Math.sin(p * Math.PI * 3 + 0.7);
+      const cx = px * w;
+      const cy = py * h;
+
+      // spawn trailing particles at blob position
+      spawnParticles(cx + (Math.random()-0.5)*8, cy + (Math.random()-0.5)*8, 1 + Math.floor(Math.random()*2));
+
+      // update & draw particles (under blob)
+      ctx.save();
+      ctx.globalCompositeOperation = 'screen';
+      for(let i=particles.length-1;i>=0;i--){
+        const ptn = particles[i];
+        ptn.step(dt);
+        if(ptn.life <= 0){
+          particles.splice(i,1);
+          continue;
+        }
+        ptn.draw(ctx);
+      }
+      ctx.restore();
+
+      // draw blob
+      drawBlob(ctx, cx, cy, params.blobSize, elapsed);
+
+      // optional: soft vignetting for cinematic look
+      ctx.save();
+      const vg = ctx.createRadialGradient(w*0.5, h*0.5, Math.min(w,h)*0.15, w*0.5, h*0.5, Math.max(w,h)*0.9);
+      vg.addColorStop(0, 'rgba(0,0,0,0)');
+      vg.addColorStop(1, 'rgba(0,0,0,0.28)');
+      ctx.fillStyle = vg;
+      ctx.fillRect(0,0,w,h);
+      ctx.restore();
+
+      // schedule
+      requestAnimationFrame(step);
+    }
+
+    // kickoff
+    requestAnimationFrame(step);
+
+  })();
+  </script>
+</body>
+</html>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Glowing Blob Animation</title>
+  <style>
+    /* Full-viewport reset */
+    html,body { height:100%; margin:0; background:#000; overflow:hidden; }
+    canvas { display:block; width:100%; height:100%; }
+
+    /* Optional UI overlay for tuning (hidden by default) */
+    .ui {
+      position:fixed; right:12px; top:12px;
+      background: rgba(255,255,255,0.06);
+      color: #fff; padding:10px; border-radius:8px;
+      font-family: Inter, system-ui, Arial; font-size:13px;
+      backdrop-filter: blur(6px);
+    }
+    .ui label { display:block; margin-bottom:6px; opacity:0.9; }
+    .ui input[type=range] { width:160px; }
+  </style>
+</head>
+<body>
+  <canvas id="c"></canvas>
+
+  <!-- Optional small UI for tweaking live values -->
+  <div class="ui" id="ui" aria-hidden="true" style="display:none;">
+    <label>Blob size <input id="size" type="range" min="40" max="400" value="160"></label>
+    <label>Glow <input id="glow" type="range" min="0" max="60" value="24"></label>
+    <label>Speed <input id="speed" type="range" min="0.2" max="3" step="0.1" value="1"></label>
+  </div>
+
+  <script>
+  /**
+   * Glowing blob + particle trail canvas animation
+   * - Responsive to devicePixelRatio
+   * - Uses layered drawing for glow + main shape + particles
+   * - Smooth path via cubic easing / sin/cos motion
+   *
+   * Drop-in file — tweak parameters below or unhide the .ui for live control.
+   */
+
+  (function(){
+    const canvas = document.getElementById('c');
+    const ctx = canvas.getContext('2d', { alpha: true });
+
+    // Parameters (adjust to match your video)
+    let params = {
+      bgGradientTop: '#0b1220',
+      bgGradientBottom: '#08202a',
+      accent1: '#22d3ee',   // bright cyan
+      accent2: '#8b5cf6',   // soft purple
+      blobSize: 160,
+      glow: 24,
+      speed: 1.0,
+      particleCount: 80,
+      particleFade: 0.015
+    };
+
+    // Hook UI if present
+    const ui = document.getElementById('ui');
+    if(ui){
+      document.getElementById('size').value = params.blobSize;
+      document.getElementById('glow').value = params.glow;
+      document.getElementById('speed').value = params.speed;
+      // toggle UI with "u" key
+      window.addEventListener('keydown', e=>{
+        if(e.key === 'u') ui.style.display = (ui.style.display === 'none')? 'block' : 'none';
+      });
+      document.getElementById('size').oninput = (e)=> params.blobSize = +e.target.value;
+      document.getElementById('glow').oninput = (e)=> params.glow = +e.target.value;
+      document.getElementById('speed').oninput = (e)=> params.speed = +e.target.value;
+    }
+
+    // DPR/resizing
+    function fitCanvas(){
+      const DPR = Math.max(1, window.devicePixelRatio || 1);
+      canvas.width  = Math.round(innerWidth * DPR);
+      canvas.height = Math.round(innerHeight * DPR);
+      canvas.style.width  = innerWidth + 'px';
+      canvas.style.height = innerHeight + 'px';
+      ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    }
+    addEventListener('resize', fitCanvas);
+    fitCanvas();
+
+    // Simple particle system
+    class Particle {
+      constructor(x,y, vx, vy, life, color){
+        this.x=x; this.y=y; this.vx=vx; this.vy=vy;
+        this.life=life; this.maxLife=life; this.color=color;
+        this.size = Math.random()*3 + 1;
+      }
+      step(dt){
+        this.x += this.vx * dt;
+        this.y += this.vy * dt;
+        this.vx *= 0.995; this.vy *= 0.995; // slight drag
+        this.life -= dt;
+      }
+      draw(g){
+        const t = Math.max(0, this.life/this.maxLife);
+        g.globalAlpha = Math.pow(t, 1.1);
+        g.beginPath();
+        g.arc(this.x, this.y, this.size, 0, Math.PI*2);
+        g.fillStyle = this.color;
+        g.fill();
+      }
+    }
+
+    const particles = [];
+
+    // animation state
+    let tStart = performance.now()/1000;
+    let lastTime = tStart;
+
+    function spawnParticles(x,y, count=2){
+      for(let i=0;i<count;i++){
+        const a = Math.random()*Math.PI*2;
+        const s = 10 + Math.random()*80;
+        const vx = Math.cos(a)*s*0.02;
+        const vy = Math.sin(a)*s*0.02;
+        const life = 0.6 + Math.random()*1.2;
+        const c = (Math.random() < 0.5) ? params.accent1 : params.accent2;
+        particles.push(new Particle(x, y, vx, vy, life, c));
+      }
+      // limit count
+      while(particles.length > params.particleCount) particles.shift();
+    }
+
+    // Utility: smoothstep easing
+    function easeInOutCubic(x){
+      return x<0.5 ? 4*x*x*x : 1 - Math.pow(-2*x+2,3)/2;
+    }
+
+    // Blob shape drawing: uses radial gradient + composite for glow
+    function drawBlob(g, x, y, radius, angle){
+      // glow layer
+      g.save();
+      g.globalCompositeOperation = 'lighter';
+      g.beginPath();
+      g.filter = `blur(${params.glow}px)`;
+      const grad = g.createRadialGradient(x, y, radius*0.2, x, y, radius*1.6);
+      grad.addColorStop(0, params.accent1);
+      grad.addColorStop(0.5, params.accent2);
+      grad.addColorStop(1, 'rgba(0,0,0,0)');
+      g.fillStyle = grad;
+      g.arc(x, y, radius*1.6, 0, Math.PI*2);
+      g.fill();
+      g.filter = 'none';
+      g.restore();
+
+      // main blob — slightly squashed ellipse to mimic organic motion
+      g.save();
+      g.translate(x, y);
+      const wobble = Math.sin(angle*2.3) * 0.12;
+      g.rotate(wobble);
+      g.beginPath();
+      g.ellipse(0, 0, radius*1.05, radius*0.9, 0, 0, Math.PI*2);
+      // inner gradient for depth
+      const inner = g.createLinearGradient(-radius, -radius, radius, radius);
+      inner.addColorStop(0, params.accent1);
+      inner.addColorStop(1, params.accent2);
+      g.fillStyle = inner;
+      g.fill();
+      // subtle highlight
+      g.globalAlpha = 0.18;
+      g.fillStyle = '#ffffff';
+      g.beginPath();
+      g.ellipse(-radius*0.25, -radius*0.35, radius*0.45, radius*0.25, 0, 0, Math.PI*2);
+      g.fill();
+      g.globalAlpha = 1;
+      g.restore();
+    }
+
+    // Main render loop
+    function step(now){
+      now = now/1000;
+      let dt = Math.min(0.04, now - lastTime);
+      lastTime = now;
+      const elapsed = now - tStart;
+
+      // background gradient
+      const w = innerWidth, h = innerHeight;
+      const bg = ctx.createLinearGradient(0,0, w, h);
+      bg.addColorStop(0, params.bgGradientTop);
+      bg.addColorStop(1, params.bgGradientBottom);
+      ctx.fillStyle = bg;
+      ctx.fillRect(0,0,w,h);
+
+      // compute blob center along a looping, smooth path
+      const loop = 6.0; // seconds per loop
+      const p = (elapsed * params.speed / loop) % 1; // 0..1
+      // combine circular + Lissajous for natural path
+      const px = 0.5 + 0.3 * Math.cos(p * Math.PI * 2) + 0.06 * Math.cos(p * Math.PI * 4 + 1.2);
+      const py = 0.5 + 0.2 * Math.sin(p * Math.PI * 2) + 0.06 * Math.sin(p * Math.PI * 3 + 0.7);
+      const cx = px * w;
+      const cy = py * h;
+
+      // spawn trailing particles at blob position
+      spawnParticles(cx + (Math.random()-0.5)*8, cy + (Math.random()-0.5)*8, 1 + Math.floor(Math.random()*2));
+
+      // update & draw particles (under blob)
+      ctx.save();
+      ctx.globalCompositeOperation = 'screen';
+      for(let i=particles.length-1;i>=0;i--){
+        const ptn = particles[i];
+        ptn.step(dt);
+        if(ptn.life <= 0){
+          particles.splice(i,1);
+          continue;
+        }
+        ptn.draw(ctx);
+      }
+      ctx.restore();
+
+      // draw blob
+      drawBlob(ctx, cx, cy, params.blobSize, elapsed);
+
+      // optional: soft vignetting for cinematic look
+      ctx.save();
+      const vg = ctx.createRadialGradient(w*0.5, h*0.5, Math.min(w,h)*0.15, w*0.5, h*0.5, Math.max(w,h)*0.9);
+      vg.addColorStop(0, 'rgba(0,0,0,0)');
+      vg.addColorStop(1, 'rgba(0,0,0,0.28)');
+      ctx.fillStyle = vg;
+      ctx.fillRect(0,0,w,h);
+      ctx.restore();
+
+      // schedule
+      requestAnimationFrame(step);
+    }
+
+    // kickoff
+    requestAnimationFrame(step);
+
+  })();
+  </script>
+</body>
+</html>
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>ICT 12-D MEMORIES</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Dancing+Script:wght@600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#07060a;
+    --card:#0f1720;
+    --accent:#ff6ec7;
+    --accent2:#7ad4ff;
+    --muted:rgba(255,255,255,0.66);
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;
+    font-family: "Montserrat", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+    background: radial-gradient(1200px 600px at 10% 10%, rgba(122,212,255,0.06), transparent),
+                radial-gradient(1000px 500px at 90% 90%, rgba(255,110,199,0.04), transparent),
+                var(--bg);
+    color:#fff;
+    -webkit-font-smoothing:antialiased;
+    -moz-osx-font-smoothing:grayscale;
+  }
+
+  /* Header */
+  header{
+    padding:28px 24px;
+    display:flex;
+    align-items:center;
+    gap:18px;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    position:sticky;
+    top:0;
+    backdrop-filter: blur(6px);
+    z-index:50;
+  }
+  .logo {
+    width:56px; height:56px; border-radius:12px;
+    background: linear-gradient(135deg,var(--accent),var(--accent2));
+    display:flex;align-items:center;justify-content:center;
+    font-weight:700;font-size:20px;color:#06060a;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.6), inset 0 -6px 20px rgba(255,255,255,0.05);
+  }
+  h1{margin:0;font-size:20px;line-height:1;letter-spacing:0.2px}
+  p.lead{margin:0;color:var(--muted);font-size:13px}
+
+  /* Layout */
+  .container{max-width:1200px;margin:28px auto;padding:0 18px}
+
+  /* Slideshow */
+  .slideshow {
+    position:relative;
+    height:420px;
+    border-radius:16px;
+    overflow:hidden;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+    margin-bottom:26px;
+    background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.05));
+  }
+  .slide {
+    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    transition: opacity 1s cubic-bezier(.2,.9,.3,1), transform 1s ease;
+    opacity:0; transform: scale(1.03);
+  }
+  .slide.active { opacity:1; transform: scale(1); }
+  .slide img{ width:100%; height:100%; object-fit:cover; display:block; filter: saturate(1.05) contrast(1.02) brightness(0.96) }
+  .slide .caption {
+    position:absolute; left:24px; bottom:20px; z-index:10;
+    background:linear-gradient(90deg, rgba(0,0,0,0.42), rgba(0,0,0,0.18));
+    padding:10px 14px; border-radius:10px; font-weight:600;
+    backdrop-filter: blur(4px);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.5);
+  }
+  .slide .caption span.title { font-family: 'Dancing Script', cursive; font-size:20px; display:block }
+  .slideshow .controls { position:absolute; right:16px; top:16px; z-index:20; display:flex; gap:8px }
+  .btn {
+    background: rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.06);
+    color:#fff; padding:8px 12px; border-radius:10px; cursor:pointer; font-weight:600;
+    backdrop-filter: blur(6px);
+  }
+  .slideshow .progress {
+    position:absolute; left:0; bottom:0; height:4px; background:rgba(255,255,255,0.06); width:100%;
+  }
+  .slideshow .progress .bar { height:100%; width:0%; background: linear-gradient(90deg,var(--accent),var(--accent2)); transition: width 0.2s linear }
+
+  /* Memory wall */
+  .wall {
+    display:grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px,1fr));
+    gap:14px;
+    margin-top:18px;
+  }
+  .card{
+    background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.06));
+    border-radius:12px; overflow:hidden; cursor:pointer; transition: transform .18s ease, box-shadow .18s ease;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.45);
+    display:flex; flex-direction:column;
+  }
+  .card:hover { transform: translateY(-6px); box-shadow: 0 22px 40px rgba(0,0,0,0.6); }
+  .card img{ width:100%; height:160px; object-fit:cover; display:block; }
+  .meta { padding:10px 12px; color:var(--muted); font-size:13px; display:flex; flex-direction:column; gap:6px }
+  .meta .name { color:#fff; font-weight:700; font-size:14px }
+
+  /* Modal / Lightbox */
+  .lightbox {
+    position:fixed; inset:0; display:flex; align-items:center; justify-content:center;
+    background: rgba(3,3,6,0.78); z-index:200; opacity:0; pointer-events:none;
+    transition: opacity .28s ease;
+  }
+  .lightbox.show { opacity:1; pointer-events:auto; }
+  .lightbox .inner {
+    max-width:90vw; max-height:90vh; width:1100px; height:700px; display:flex; gap:14px;
+    align-items:center; justify-content:center;
+  }
+  .lightbox img { max-width:100%; max-height:100%; object-fit:contain; border-radius:10px; box-shadow: 0 20px 60px rgba(0,0,0,0.7) }
+  .lightbox .info { color:var(--muted); min-width:260px; max-width:340px; padding:12px; font-size:14px }
+  .lightbox .info h3 { margin:0 0 6px 0; font-size:20px; color:#fff }
+  .lightbox .nav { position:absolute; left:12px; right:12px; top:50%; transform:translateY(-50%); display:flex; justify-content:space-between; pointer-events:none }
+  .lightbox .nav button { pointer-events:auto; background: rgba(255,255,255,0.06); border: none; padding:10px 12px; border-radius:10px; color:#fff; font-weight:700; cursor:pointer }
+
+  /* Footer / credits */
+  footer { margin:28px 0; color:var(--muted); font-size:13px; text-align:center }
+
+  /* small screens */
+  @media (max-width:720px){
+    .slideshow { height:320px }
+    .card img { height:120px }
+    .lightbox .inner { width:95vw; height:70vh; flex-direction:column; }
+    .lightbox .info { display:none }
+  }
+
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">ICT</div>
+  <div>
+    <h1>ICT 12-D MEMORIES</h1>
+    <p class="lead">A collection of moments — slideshow + memory wall • Click any photo to enlarge</p>
+  </div>
+  <div style="margin-left:auto;display:flex;gap:10px;align-items:center">
+    <button id="muteBtn" class="btn" title="Mute/unmute music">⏯ Music</button>
+    <button id="playPause" class="btn" title="Pause slideshow">⏸ Pause</button>
+  </div>
+</header>
+
+<main class="container">
+
+  <!-- Slideshow -->
+  <section class="slideshow" id="slideshow">
+    <!-- Slides injected by JS -->
+    <div class="controls">
+      <button id="prevSlide" class="btn">‹</button>
+      <button id="nextSlide" class="btn">›</button>
+    </div>
+    <div class="progress"><div class="bar" id="progressBar"></div></div>
+  </section>
+
+  <!-- Memory wall -->
+  <section>
+    <h2 style="margin:6px 0 12px 4px;font-size:16px">Memory Wall</h2>
+    <div class="wall" id="wall">
+      <!-- cards injected by JS -->
+    </div>
+  </section>
+
+  <footer>
+    Built with ❤️ for ICT 12-D — replace images & music with your own files.
+  </footer>
+</main>
+
+<!-- Lightbox -->
+<div class="lightbox" id="lightbox">
+  <div class="nav">
+    <button id="lbPrev">‹ Prev</button>
+    <button id="lbNext">Next ›</button>
+  </div>
+  <div class="inner">
+    <img id="lbImage" src="" alt="Enlarged photo">
+    <div class="info">
+      <h3 id="lbTitle">Name</h3>
+      <p id="lbCaption">Caption / memory text</p>
+      <p style="margin-top:12px;color:var(--muted);font-size:13px">Use ← → or the buttons to navigate • Click outside to close</p>
+    </div>
+  </div>
+</div>
+
+<!-- Background music -->
+<audio id="bgMusic" loop>
+  <source id="musicSource" src="MUSIC_URL_HERE" type="audio/mpeg">
+  Your browser does not support audio.
+</audio>
+
+<script>
+/*
+  INSTRUCTIONS:
+  - Replace MUSIC_URL_HERE with your mp3 link.
+  - Replace the `images` array entries with your own image URLs and captions.
+  - Open this file in a browser. The slideshow auto-plays.
+*/
+
+// Example images: replace these with your classmates' picture URLs
+const images = [
+  { src: "https://picsum.photos/id/1018/1400/900", name: "Alex Santos", caption: "Prom night memories" },
+  { src: "https://picsum.photos/id/1025/1400/900", name: "Bea Cruz", caption: "Classroom mischief" },
+  { src: "https://picsum.photos/id/1035/1400/900", name: "Chris De la Cruz", caption: "Science fair day" },
+  { src: "https://picsum.photos/id/1043/1400/900", name: "Danica Reyes", caption: "Field trip smiles" },
+  { src: "https://picsum.photos/id/1050/1400/900", name: "Ella Mendez", caption: "Group project vibes" },
+  { src: "https://picsum.photos/id/1067/1400/900", name: "Ferdinand Lopez", caption: "Late-night study squad" },
+  { src: "https://picsum.photos/id/1074/1400/900", name: "Gina Torres", caption: "School carnival" },
+  { src: "https://picsum.photos/id/1084/1400/900", name: "Hiro Tan", caption: "Sports day champion" },
+  { src: "https://picsum.photos/id/1080/1400/900", name: "Ivy Santos", caption: "Lunchtime laughter" },
+  { src: "https://picsum.photos/id/109/1400/900", name: "Jude Ramos", caption: "Project partners" },
+  { src: "https://picsum.photos/id/110/1400/900", name: "Kara Lee", caption: "Big smiles" },
+  { src: "https://picsum.photos/id/111/1400/900", name: "Liam Garcia", caption: "Graduation practice" },
+  { src: "https://picsum.photos/id/112/1400/900", name: "Maya Ortiz", caption: "Art class masterpiece" },
+  { src: "https://picsum.photos/id/113/1400/900", name: "Nico Valdez", caption: "Joke of the day" },
+  { src: "https://picsum.photos/id/114/1400/900", name: "Olivia Perez", caption: "Library queens" },
+  { src: "https://picsum.photos/id/115/1400/900", name: "Pia Gomez", caption: "Besties forever" },
+  { src: "https://picsum.photos/id/116/1400/900", name: "Quinn Tan", caption: "Bus ride memories" },
+  { src: "https://picsum.photos/id/117/1400/900", name: "Ralph Cruz", caption: "Science lab chaos" }
+];
+
+// Slideshow logic
+const slideshow = document.getElementById('slideshow');
+const progressBar = document.getElementById('progressBar');
+let slides = [];
+let current = 0;
+let slideInterval = 4500; // ms per slide
+let slideTimer = null;
+let playing = true;
+
+// Create slides
+images.slice(0,8).forEach((it, idx) => {
+  const s = document.createElement('div');
+  s.className = 'slide';
+  if(idx===0) s.classList.add('active');
+  s.innerHTML = `
+    <img src="${it.src}" alt="${it.name}">
+    <div class="caption"><span class="title">${it.name}</span><small style="display:block;color:var(--muted)">${it.caption}</small></div>
+  `;
+  slideshow.appendChild(s);
+  slides.push(s);
+});
+
+// progress animation helper
+function startProgress() {
+  progressBar.style.transition = 'none';
+  progressBar.style.width = '0%';
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      progressBar.style.transition = `width ${slideInterval}ms linear`;
+      progressBar.style.width = '100%';
+    });
+  });
+}
+function resetProgress() {
+  progressBar.style.transition = 'none';
+  progressBar.style.width = '0%';
+}
+
+// show slide
+function showSlide(i) {
+  slides.forEach((s, idx) => s.classList.toggle('active', idx===i));
+  current = i;
+}
+
+// go next
+function nextSlide() {
+  const n = (current + 1) % slides.length;
+  showSlide(n);
+  resetProgress();
+  startProgress();
+}
+
+// go prev
+function prevSlide() {
+  const n = (current - 1 + slides.length) % slides.length;
+  showSlide(n);
+  resetProgress();
+  startProgress();
+}
+
+document.getElementById('nextSlide').addEventListener('click', () => { nextSlide(); pauseSlideshow(); });
+document.getElementById('prevSlide').addEventListener('click', () => { prevSlide(); pauseSlideshow(); });
+
+function playSlideshow() {
+  if(slideTimer) clearInterval(slideTimer);
+  slideTimer = setInterval(nextSlide, slideInterval);
+  startProgress();
+  playing = true;
+  document.getElementById('playPause').textContent = '⏸ Pause';
+}
+function pauseSlideshow() {
+  if(slideTimer) clearInterval(slideTimer);
+  slideTimer = null;
+  resetProgress();
+  playing = false;
+  document.getElementById('playPause').textContent = '▶ Play';
+}
+document.getElementById('playPause').addEventListener('click', () => {
+  if(playing) pauseSlideshow(); else playSlideshow();
+});
+
+// Initialize
+playSlideshow();
+
+// Memory wall cards
+const wall = document.getElementById('wall');
+images.forEach((it, idx) => {
+  const card = document.createElement('div');
+  card.className = 'card';
+  card.innerHTML = `
+    <img src="${it.src}" alt="${it.name}" loading="lazy" data-index="${idx}">
+    <div class="meta">
+      <div class="name">${it.name}</div>
+      <div class="caption">${it.caption}</div>
+    </div>
+  `;
+  wall.appendChild(card);
+
+  card.addEventListener('click', () => openLightbox(idx));
+});
+
+// Lightbox / modal
+const lightbox = document.getElementById('lightbox');
+const lbImage = document.getElementById('lbImage');
+const lbTitle = document.getElementById('lbTitle');
+const lbCaption = document.getElementById('lbCaption');
+let lbIndex = 0;
+
+function openLightbox(i){
+  lbIndex = i;
+  lbImage.src = images[i].src;
+  lbTitle.textContent = images[i].name;
+  lbCaption.textContent = images[i].caption;
+  lightbox.classList.add('show');
+  // pause slideshow while viewing
+  pauseSlideshow();
+}
+function closeLightbox(){
+  lightbox.classList.remove('show');
+  // resume slideshow after a short delay
+  setTimeout(() => { playSlideshow(); }, 800);
+}
+document.getElementById('lbPrev').addEventListener('click', () => {
+  lbIndex = (lbIndex - 1 + images.length) % images.length;
+  openLightbox(lbIndex);
+});
+document.getElementById('lbNext').addEventListener('click', () => {
+  lbIndex = (lbIndex + 1) % images.length;
+  openLightbox(lbIndex);
+});
+lightbox.addEventListener('click', (e) => {
+  if(e.target === lightbox) closeLightbox();
+});
+document.addEventListener('keydown', (e) => {
+  if(!lightbox.classList.contains('show')) return;
+  if(e.key === 'ArrowLeft') { lbIndex = (lbIndex - 1 + images.length) % images.length; openLightbox(lbIndex); }
+  if(e.key === 'ArrowRight') { lbIndex = (lbIndex + 1) % images.length; openLightbox(lbIndex); }
+  if(e.key === 'Escape') closeLightbox();
+});
+
+// Background music controls
+const bg = document.getElementById('bgMusic');
+const muteBtn = document.getElementById('muteBtn');
+let muted = false;
+
+// Try to autoplay (may be blocked by browser unless user interacted)
+function tryAutoplayMusic(){
+  bg.play().then(()=> {
+    muted = false;
+    muteBtn.textContent = '🔊 Music';
+  }).catch(()=> {
+    // Autoplay blocked: start muted so it can play without interaction, then unmute when user toggles
+    bg.muted = true;
+    bg.play().catch(()=>{/* still blocked */});
+    muted = true;
+    muteBtn.textContent = '🔈 Music (tap to unmute)';
+  });
+}
+
+// replace the placeholder music with your own by editing the <source src=""> above
+tryAutoplayMusic();
+
+muteBtn.addEventListener('click', () => {
+  if(bg.paused) {
+    bg.play().catch(()=>{});
+    muted = false;
+    bg.muted = false;
+    muteBtn.textContent = '🔊 Music';
+  } else {
+    // toggle mute
+    bg.muted = !bg.muted;
+    muted = !!bg.muted;
+    muteBtn.textContent = muted ? '🔈 Music (muted)' : '🔊 Music';
+  }
+});
+
+// Ensure music control updates on play/pause
+bg.addEventListener('play', ()=> muteBtn.textContent = bg.muted ? '🔈 Music (muted)' : '🔊 Music');
+bg.addEventListener('pause', ()=> muteBtn.textContent = '⏸ Music paused');
+
+// Accessibility: pause slideshow when user focuses on lightbox
+document.addEventListener('visibilitychange', () => {
+  if(document.hidden) pauseSlideshow();
+  else if(!lightbox.classList.contains('show')) playSlideshow();
+});
+</script>
+
+</body>
+</html>
