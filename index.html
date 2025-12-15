@@ -228,24 +228,163 @@ footer{margin-top:14px;color:rgba(255,255,255,0.45);font-size:0.86rem}
     background: -o-linear-gradient(top, white, black);
     background: linear-gradient(to bottom, white, black);
 }
+/* ===== LAST MESSAGE CARD ===== */
+.last-card-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.4s ease;
+  z-index: 2000;
+}
+
+.last-card-overlay.show {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.last-card {
+  background: linear-gradient(135deg, #ffd6e8, #fff);
+  color: #222;
+  max-width: 380px;
+  width: 90%;
+  padding: 24px;
+  border-radius: 20px;
+  text-align: center;
+  box-shadow: 0 20px 40px rgba(255, 107, 154, 0.4);
+  transform: translateY(40px) scale(0.9);
+  opacity: 0;
+  transition: all 0.5s ease;
+  animation: floatCard 3s ease-in-out infinite;
+}
+
+.last-card-overlay.show .last-card {
+  transform: translateY(0) scale(1);
+  opacity: 1;
+}
+
+.last-card h2 {
+  margin-top: 0;
+  color: #ff4d88;
+}
+
+.last-card p {
+  font-size: 0.95rem;
+  line-height: 1.6;
+  margin-bottom: 18px;
+}
+
+.last-card button {
+  background: linear-gradient(90deg, #ff6b9a, #ffd166);
+  border: none;
+  padding: 10px 18px;
+  border-radius: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* floating animation */
+@keyframes floatCard {
+  0%,100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-6px) scale(1); }
+}
+
+/* Mobile adjustments */
+@media (max-width: 480px) {
+  .last-card {
+    padding: 20px;
+  }
+
+  .last-card p {
+    font-size: 0.9rem;
+  }
+}
+/* ===== RESPONSIVE ===== */
+
+/* Tablets */
+@media (max-width: 768px) {
+  body {
+    padding: 16px;
+  }
+
+  h1 {
+    font-size: 1.6rem;
+    text-align: center;
+  }
+
+  .subtitle {
+    text-align: center;
+  }
+
+  .message {
+    font-size: 0.95rem;
+  }
+
+  .controls {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  button {
+    width: 100%;
+    max-width: 220px;
+  }
+
+  .photo img {
+    max-width: 260px;
+  }
+}
+
+/* Phones */
+@media (max-width: 480px) {
+  .card {
+    padding: 18px;
+    border-radius: 14px;
+  }
+
+  h1 {
+    font-size: 1.35rem;
+  }
+
+  .message {
+    font-size: 0.9rem;
+    padding: 14px;
+  }
+
+  .letter {
+    width: 90%;
+    font-size: 0.9rem;
+  }
+
+  footer {
+    text-align: center;
+  }
+}
+
 </style>
 </head>
 <body>
-<audio id="mySong" src="okay.mp3" autoplay></audio>
+<audio id="mySong" src="okay.mp3"></audio>
+
 <div class="card">
   <div class="split">
     <div class="greeting">
       <h1>Hello, my dear greatest love!! — <span style="color:var(--accent)">I miss you a lot!!</span></h1>
       <div class="subtitle">A little message for you okay?✨</div>
       <div class="message" id="longmsg">
-        I made this because I wanted you to realize that I'm always here even though I'm the one who left.
-        I didn't mean to leave, it's just you're not happy with me anymore, so I decided to make you happy without me.
-        This is the last surprise I will make for you okay? I always love you Ashley, my baby. ❤️
+        I made this because I wanted you to realize that I'm always here even though You hate me,i know you're just mad kaya mo nasabi lahat nang yun
+        I didn't mean to hurt you, it's just i'm so stubborn, sorry for always said "lets end this"
+        you know i can't without you right? I always love you Ashley, my baby. ❤️
       </div>
       <div class="controls">
         <button id="surpriseBtn">Another message</button>
+        <button id="lastMsgBtn">Last Message</button>
         <button onclick="playSong()">Play Song</button>
-        <button>My Question</button>
+        <button id="questionBtn">My Question</button>
         <button id="loveBtn">Love</button>
       </div>
       <footer>I failed as your man.</footer>
@@ -267,7 +406,24 @@ footer{margin-top:14px;color:rgba(255,255,255,0.45);font-size:0.86rem}
 
 <!-- Floating letter -->
 <div class="letter" id="letterText"></div>
+<!-- Last Message Popup Card -->
+<div class="last-card-overlay" id="lastCard">
+  <div class="last-card">
+    <h2>My Last Message 💌</h2>
+    <p>
+      Hi!! Happy birthday to my favorite person in the world, for sure when you read it <br>
+       we're strangers but i made this for you i mean for your birthday, <br>
+       I know since I'm gone you're happy, i know that he's your the one na, <br>
+       i will not try to say bad cuz I'm the bad one here, <br>
+       always be happy i know he's better person, don't worry all the pain that i cause to you, <br>
+       i will regret it until i die, seeing you happy is the best thing i ever seen, <br>
+      now i will let you be happy forever!! Happy birthday again!! 🌸 December 15 2025, 11:20 PM
+    </p>
+    <button id="closeLastCard">Close</button>
+  </div>
+</div>
 
+</body>
 <script>
 const photos=["baby2.jpg","baby3.jpg","baby4.jpg","baby5.jpg",];
 let index=0;
@@ -283,7 +439,7 @@ const envelope=document.getElementById('envelope');
 const letter=document.getElementById('letterText');
 
 document.getElementById('surpriseBtn').addEventListener('click',()=>{
-  letter.textContent="HI!! I miss you a lot, are you okay now? I'm always here okay? I'm sorry for what i did, sorry for leaving you but i...realize that i'm so bad treating you but i saw your smile from afar..... but it's not coming from me, galing to sa mga kaibigan mo..na pinag babawal ko na lumapit ka, doon ko na realize that i'm so fucking useless at all kaya kita pinalaya okay? hindi dahil may bagoor ayaw ko na sayo, i'm always love you, and now it's my day can you make my last wish? please be happy cuz it's what you deservenot me....i will live at my regrets, i wish the best for you okay? advance happy birthday!! see you in another universe!!";
+  letter.textContent="HI!! I miss you a lot, are you okay now? I'm always here okay? I'm sorry for what i did, sorry for leaving you but i...realize that i'm so bad treating you but i saw your smile from afar..... but it's not coming from me, galing to sa mga kaibigan mo..na pinag babawal ko na lumapit ka, doon ko na realize that i'm so fucking useless at all kaya kita pinalaya okay? hindi dahil may bagoor ayaw ko na sayo, i'm always love you, and now it's my day can you make my last wish? please be happy cuz it's what you deserve not me....i will live at my regrets, i wish the best for you okay? advance happy birthday!! see you in another universe!! august 15 2025, 10:30 PM";
 
   envContainer.classList.add('show');
   setTimeout(()=> envelope.classList.add('open'), 1000);
@@ -300,11 +456,32 @@ document.getElementById('surpriseBtn').addEventListener('click',()=>{
   }, 10000);
 });
 
-function playSong(){document.getElementById("mySong").play();}
-document.getElementById('loveBtn').addEventListener('click',()=>{window.location.href='meme.html';})
-document.querySelector('button:nth-child(3)').addEventListener('click', function() {
-    window.open('https://forms.gle/NK3LMCBYFLVt6vfv5', '_blank');
+document.addEventListener("DOMContentLoaded", () => {
+
+  // Play song
+  window.playSong = function () {
+    const song = document.getElementById("mySong");
+    song.play().catch(err => console.log(err));
+  };
+
+  // Love button
+  const loveBtn = document.getElementById('loveBtn');
+  if (loveBtn) {
+    loveBtn.addEventListener('click', () => {
+      window.location.href = 'meme.html';
+    });
+  }
+
+  // Question button
+  const questionBtn = document.getElementById('questionBtn');
+  if (questionBtn) {
+    questionBtn.addEventListener('click', () => {
+      window.open('https://forms.gle/NK3LMCBYFLVt6vfv5', '_blank');
+    });
+  }
+
 });
+
 
 function spawnHearts(){
   for(let i=0;i<15;i++){
@@ -316,6 +493,18 @@ function spawnHearts(){
     setTimeout(()=>heart.remove(),4000);
   }
 }
-</script>
-</body>
+const lastCard = document.getElementById('lastCard');
+const closeLastCard = document.getElementById('closeLastCard');
+
+document.getElementById('lastMsgBtn').addEventListener('click', () => {
+  lastCard.classList.add('show');
+  spawnHearts();
+});
+
+closeLastCard.addEventListener('click', () => {
+  lastCard.classList.remove('show');
+});
+
+</script> 
+
 </html>
