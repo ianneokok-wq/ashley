@@ -5,12 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>For You — ♡</title>
 <style>
-/*
-* Prefixed by https://autoprefixer.github.io
-* PostCSS: v8.4.14,
-* Autoprefixer: v10.4.7
-* Browsers: last 4 version
-*/
+
 
 :root {
   --bg:#0f1022;
@@ -21,6 +16,10 @@
 *{-webkit-box-sizing:border-box;box-sizing:border-box;}
 html,body{
   height:100%;margin:0;font-family:'Inter',sans-serif;
+  overflow-x: hidden; /* prevent sideways scroll */
+  overflow-y: auto;   /* allow vertical scrolling */
+
+
 }
 body{
   background: -o-radial-gradient(10% 20%, 1200px 600px, rgba(241, 0, 76, 0.5), transparent),
@@ -364,12 +363,17 @@ footer{margin-top:14px;color:rgba(255,255,255,0.45);font-size:0.86rem}
     text-align: center;
   }
 }
-.scrollable-container {
-  max-height: 500px; /* or any height */
-  overflow-y: auto; /* vertical scroll */
-  border: 1px solid #ccc; /* optional, just to see the box */
-}
 
+@media (max-width: 480px) {
+  body {
+    align-items: flex-start;
+  }
+
+  .card {
+    margin-top: 20px;
+    margin-bottom: 20px;
+  }
+}
 
 </style>
 </head>
@@ -405,7 +409,7 @@ footer{margin-top:14px;color:rgba(255,255,255,0.45);font-size:0.86rem}
     </aside>
   </div>
 </div>
-<
+
 
 <!-- Envelope -->
 <div class="envelope-container" id="envContainer">
