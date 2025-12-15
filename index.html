@@ -14,23 +14,27 @@
   --glass:rgba(255,255,255,0.06);
 }
 *{-webkit-box-sizing:border-box;box-sizing:border-box;}
-html,body{
-  height:100%;margin:0;font-family:'Inter',sans-serif;
-  overflow-x: hidden; /* prevent sideways scroll */
-  overflow-y: auto;   /* allow vertical scrolling */
-
-
+html {
+  height: auto;
 }
-body{
-  background: -o-radial-gradient(10% 20%, 1200px 600px, rgba(241, 0, 76, 0.5), transparent),
-              -o-radial-gradient(90% 80%, 1000px 500px, rgba(255,209,102,0.03), transparent),
-              var(--bg);
+
+body {
+  min-height: 100vh;
+  margin: 0;
+  font-family: 'Inter', sans-serif;
+
   background: radial-gradient(1200px 600px at 10% 20%, rgba(241, 0, 76, 0.5), transparent),
               radial-gradient(1000px 500px at 90% 80%, rgba(255,209,102,0.03), transparent),
               var(--bg);
-  color:#eee;display:-webkit-box;display:-ms-flexbox;display:flex;-webkit-box-align:center;-ms-flex-align:center;align-items:center;-webkit-box-pack:center;-ms-flex-pack:center;justify-content:center;padding:32px;
-  overflow:hidden;
+
+  color: #eee;
+
+  display: block;        /* 🔥 NOT FLEX */
+  overflow-x: hidden;
+  overflow-y: auto;      /* 🔥 ENABLE SCROLL */
+  padding: 16px;
 }
+
 
 .card{
   width:100%;max-width:960px;
