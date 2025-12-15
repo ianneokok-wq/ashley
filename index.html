@@ -364,6 +364,12 @@ footer{margin-top:14px;color:rgba(255,255,255,0.45);font-size:0.86rem}
     text-align: center;
   }
 }
+.scrollable-container {
+  max-height: 500px; /* or any height */
+  overflow-y: auto; /* vertical scroll */
+  border: 1px solid #ccc; /* optional, just to see the box */
+}
+
 
 </style>
 </head>
@@ -387,6 +393,10 @@ footer{margin-top:14px;color:rgba(255,255,255,0.45);font-size:0.86rem}
         <button id="questionBtn">My Question</button>
         <button id="loveBtn">Love</button>
       </div>
+      <div class="scrollable-container">
+  <!-- lots of content here -->
+</div>
+
       <footer>I failed as your man.</footer>
     </div>
     <aside class="side photo">
@@ -395,6 +405,7 @@ footer{margin-top:14px;color:rgba(255,255,255,0.45);font-size:0.86rem}
     </aside>
   </div>
 </div>
+<
 
 <!-- Envelope -->
 <div class="envelope-container" id="envContainer">
